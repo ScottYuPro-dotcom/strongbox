@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strongbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ground:#f7f6f3; --panel:#ffffff; --panel-2:#f1efea;
+  --ink:#11181c; --ink-2:#39444a; --ink-3:#6b7478;
+  --line:#ded9d0; --line-2:#c8c2b6;
+  --brass:#9a7030; --brass-fill:#b4873f; --brass-lit:#d9a85c; --brass-wash:#f5ecdc;
+  --good:#2f7d5d; --warn:#a8562a; --crit:#9c3028;
+  --good-wash:#e7f2ec; --warn-wash:#fbeee4; --crit-wash:#f9e8e6;
+  --shadow:0 1px 2px rgba(17,24,28,.06),0 8px 24px -12px rgba(17,24,28,.18);
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Archivo",system-ui,-apple-system,Segoe UI,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0e1416; --panel:#161e21; --panel-2:#1d262a;
+    --ink:#eef2f1; --ink-2:#b4c0c2; --ink-3:#879598;
+    --line:#2a353a; --line-2:#3a474d;
+    --brass:#d9a85c; --brass-fill:#b4873f; --brass-lit:#e8c389; --brass-wash:#2a2318;
+    --good:#5fbf92; --warn:#d99558; --crit:#e07a6e;
+    --good-wash:#15271f; --warn-wash:#2b2016; --crit-wash:#2b1a18;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0e1416; --panel:#161e21; --panel-2:#1d262a;
+  --ink:#eef2f1; --ink-2:#b4c0c2; --ink-3:#879598;
+  --line:#2a353a; --line-2:#3a474d;
+  --brass:#d9a85c; --brass-fill:#b4873f; --brass-lit:#e8c389; --brass-wash:#2a2318;
+  --good:#5fbf92; --warn:#d99558; --crit:#e07a6e;
+  --good-wash:#15271f; --warn-wash:#2b2016; --crit-wash:#2b1a18;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:32px 20px 72px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* header */
+.top{display:flex;align-items:flex-start;gap:14px;margin-bottom:6px}
+.mark{flex:none;width:38px;height:38px;border-radius:9px;background:var(--brass-fill);
+  display:grid;place-items:center;box-shadow:var(--shadow)}
+.mark svg{display:block}
+h1{font-size:25px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.sub{color:var(--ink-3);font-size:13.5px;margin-top:2px}
+.local{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:5px 10px;
+  border:1px solid var(--line);border-radius:999px;background:var(--panel);
+  font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--good);flex:none}
+
+/* mode switch */
+.modes{display:flex;gap:3px;margin:26px 0 18px;padding:3px;background:var(--panel-2);
+  border:1px solid var(--line);border-radius:var(--r);width:fit-content}
+.modes button{appearance:none;border:0;background:transparent;color:var(--ink-3);
+  font-family:var(--sans);font-size:13.5px;font-weight:600;padding:7px 18px;
+  border-radius:7px;cursor:pointer}
+.modes button[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.modes button:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
+
+/* steps */
+.step{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);
+  margin-bottom:14px;overflow:hidden}
+.step-h{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.num{flex:none;width:21px;height:21px;border-radius:50%;background:var(--panel-2);
+  border:1px solid var(--line-2);color:var(--ink-3);font-family:var(--mono);font-size:11px;
+  font-weight:700;display:grid;place-items:center}
+.step-h h2{font-size:13px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.step-h .tail{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.step-b{padding:16px}
+
+/* dropzone */
+.drop{border:1.5px dashed var(--line-2);border-radius:9px;background:var(--panel-2);
+  padding:26px 18px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.hot{border-color:var(--brass);background:var(--brass-wash)}
+.drop:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.drop strong{display:block;font-size:14.5px;font-weight:600}
+.drop span{display:block;color:var(--ink-3);font-size:12.5px;margin-top:3px}
+
+/* file list */
+.files{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:1px}
+.files li{display:flex;align-items:center;gap:11px;padding:9px 11px;background:var(--panel-2);
+  border:1px solid var(--line);border-radius:7px}
+.files .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+.files .sz{font-family:var(--mono);font-size:12px;color:var(--ink-3);flex:none}
+.x{appearance:none;border:0;background:transparent;color:var(--ink-3);cursor:pointer;
+  font-size:17px;line-height:1;padding:0 2px;flex:none;border-radius:4px}
+.x:hover{color:var(--crit)}
+.x:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
+
+/* fields */
+label.fl{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.pwrow{display:flex;gap:8px;flex-wrap:wrap}
+input[type=text],input[type=password],select{font-family:var(--mono);font-size:14px;
+  padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--ground);
+  color:var(--ink);min-width:0}
+input[type=text],input[type=password]{flex:1 1 260px;letter-spacing:.01em}
+input:focus-visible,select:focus-visible{outline:2px solid var(--brass);outline-offset:-1px;border-color:var(--brass)}
+.btn{appearance:none;font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 14px;
+  border:1px solid var(--line-2);border-radius:8px;background:var(--panel-2);color:var(--ink-2);
+  cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--brass);color:var(--brass)}
+.btn:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
+.go{width:100%;padding:13px;font-size:15px;font-weight:700;border:0;border-radius:9px;
+  background:var(--brass-fill);color:#fff;cursor:pointer;box-shadow:var(--shadow)}
+.go:hover:not(:disabled){background:var(--brass)}
+.go:disabled{background:var(--panel-2);color:var(--ink-3);cursor:not-allowed;box-shadow:none}
+.go:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+
+/* strength meter */
+.meter{margin-top:12px}
+.bars{display:flex;gap:3px;height:4px}
+.bars i{flex:1;background:var(--line-2);border-radius:2px}
+.bars i.on{background:var(--lvl,var(--brass-fill))}
+.mline{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:7px;
+  font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.mline b{color:var(--lvl,var(--ink-2));font-weight:700}
+
+/* cipher radios */
+.ciphers{display:flex;flex-direction:column;gap:9px}
+.cipher{display:flex;gap:11px;padding:12px;border:1px solid var(--line);border-radius:8px;
+  background:var(--panel-2);cursor:pointer}
+.cipher:has(input:checked){border-color:var(--brass);background:var(--brass-wash)}
+.cipher:has(input:focus-visible){outline:2px solid var(--brass);outline-offset:1px}
+.cipher input{margin:2px 0 0;accent-color:var(--brass-fill);flex:none}
+.cipher .ct{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cipher .cd{font-size:12.5px;color:var(--ink-3);margin-top:3px}
+.tag{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;padding:2px 6px;border-radius:4px}
+.tag.g{background:var(--good-wash);color:var(--good)}
+.tag.r{background:var(--crit-wash);color:var(--crit)}
+.opts{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:14px;
+  padding-top:14px;border-top:1px solid var(--line)}
+.opt{flex:1 1 150px}
+
+/* spec rail */
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:14px}
+.spec div{background:var(--panel-2);padding:9px 11px}
+.spec dt{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.spec dd{font-family:var(--mono);font-size:12.5px;margin:3px 0 0;color:var(--ink);word-break:break-word}
+
+/* progress + result */
+.prog{margin-top:14px;display:none}
+.prog.on{display:block}
+.track{height:5px;background:var(--panel-2);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.fill{height:100%;width:0;background:var(--brass-fill);transition:width .14s linear}
+.plabel{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:7px}
+.out{display:none;margin-top:14px;border:1px solid var(--good);border-radius:9px;
+  background:var(--good-wash);padding:15px}
+.out.on{display:block}
+.out h3{font-size:15px;font-weight:700;margin-bottom:3px}
+.out .f{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);word-break:break-all}
+.out .go{margin-top:13px;background:var(--good)}
+.out .go:hover{filter:brightness(.94)}
+.msg{display:none;margin-top:13px;padding:11px 13px;border-radius:8px;font-size:13.5px;
+  border:1px solid var(--crit);background:var(--crit-wash);color:var(--crit)}
+.msg.on{display:block}
+
+/* notes */
+.note{border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:var(--r);
+  background:var(--panel);padding:15px 17px;margin-bottom:14px}
+.note h3{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--warn);margin-bottom:7px}
+.note p{margin:0 0 8px;font-size:13.5px;color:var(--ink-2);max-width:66ch}
+.note p:last-child{margin-bottom:0}
+.apps{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.apps span{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:5px;
+  border:1px solid var(--line-2);background:var(--panel-2);color:var(--ink-2)}
+.apps span.no{color:var(--crit);border-color:var(--crit);background:var(--crit-wash)}
+footer{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--ink-3);max-width:66ch}
+footer code{font-family:var(--mono);font-size:11.5px;background:var(--panel-2);
+  padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+.hide{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="mark" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect x="3.5" y="8.5" width="13" height="9" rx="2" stroke="#fff" stroke-width="1.8"/>
+        <path d="M6.8 8.5V6.2a3.2 3.2 0 0 1 6.4 0v2.3" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="10" cy="13" r="1.4" fill="#fff"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Strongbox</h1>
+      <div class="sub">Zip and encrypt files in this browser. Open them anywhere with the password.</div>
+    </div>
+  </div>
+  <div class="local"><span class="dot"></span>Runs offline &middot; no file leaves this device</div>
+
+  <div class="modes" role="tablist" aria-label="Mode">
+    <button id="mLock" role="tab" aria-selected="true">Lock</button>
+    <button id="mUnlock" role="tab" aria-selected="false">Unlock</button>
+  </div>
+
+  <!-- ============ LOCK ============ -->
+  <section id="paneLock">
+    <div class="step">
+      <div class="step-h"><span class="num">1</span><h2>Files</h2><span class="tail" id="tally">nothing selected</span></div>
+      <div class="step-b">
+        <div class="drop" id="dropL" tabindex="0" role="button" aria-label="Choose files to encrypt">
+          <strong>Drop files here</strong>
+          <span>or click to choose &middot; multiple files are zipped together</span>
+        </div>
+        <input type="file" id="pickL" multiple class="hide">
+        <ul class="files" id="listL"></ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-h"><span class="num">2</span><h2>Passphrase</h2><span class="tail" id="genNote"></span></div>
+      <div class="step-b">
+        <div class="pwrow">
+          <input type="password" id="pwL" placeholder="Type or generate a passphrase" autocomplete="new-password" spellcheck="false">
+          <button class="btn" id="eyeL" type="button">Show</button>
+          <button class="btn" id="genWords" type="button">Words</button>
+          <button class="btn" id="genKey" type="button">Random key</button>
+        </div>
+        <div class="meter">
+          <div class="bars" id="bars"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="mline"><span id="verdict">Waiting for a passphrase</span><span id="bits">0 bits</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-h"><span class="num">3</span><h2>Cipher</h2></div>
+      <div class="step-b">
+        <div class="ciphers">
+          <label class="cipher">
+            <input type="radio" name="cipher" value="aes" checked>
+            <div>
+              <div class="ct">AES-256 <span class="tag g">Secure</span></div>
+              <div class="cd">WinZip AE-2. Needs a real archiver to open &mdash; not the unzipper built into Windows or macOS.</div>
+            </div>
+          </label>
+          <label class="cipher">
+            <input type="radio" name="cipher" value="zipcrypto">
+            <div>
+              <div class="ct">ZipCrypto <span class="tag r">Breakable</span></div>
+              <div class="cd">Opens in every built-in unzipper, including double-click on Windows and macOS. The cipher is broken &mdash; a known-plaintext attack recovers contents in seconds. Convenience only.</div>
+            </div>
+          </label>
+        </div>
+        <div class="opts">
+          <div class="opt">
+            <label class="fl" for="lvl">Compression</label>
+            <select id="lvl"><option value="5">Balanced</option><option value="9">Maximum (slower)</option><option value="0">Store only (fastest)</option></select>
+          </div>
+          <div class="opt">
+            <label class="fl" for="outName">Output name</label>
+            <input type="text" id="outName" value="strongbox.zip" spellcheck="false">
+          </div>
+        </div>
+        <dl class="spec" id="specRail"></dl>
+      </div>
+    </div>
+
+    <button class="go" id="runL" disabled>Encrypt and save</button>
+    <div class="prog" id="progL"><div class="track"><div class="fill" id="fillL"></div></div><div class="plabel" id="plabelL">Working</div></div>
+    <div class="msg" id="msgL"></div>
+    <div class="out" id="outL">
+      <h3>Encrypted</h3>
+      <div class="f" id="outInfo"></div>
+      <button class="go" id="saveL">Save again</button>
+    </div>
+  </section>
+
+  <!-- ============ UNLOCK ============ -->
+  <section id="paneUnlock" class="hide">
+    <div class="step">
+      <div class="step-h"><span class="num">1</span><h2>Encrypted zip</h2><span class="tail" id="uTally">nothing selected</span></div>
+      <div class="step-b">
+        <div class="drop" id="dropU" tabindex="0" role="button" aria-label="Choose an encrypted zip">
+          <strong>Drop a .zip here</strong>
+          <span>or click to choose</span>
+        </div>
+        <input type="file" id="pickU" accept=".zip,application/zip" class="hide">
+        <ul class="files" id="listU"></ul>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-h"><span class="num">2</span><h2>Passphrase</h2></div>
+      <div class="step-b">
+        <div class="pwrow">
+          <input type="password" id="pwU" placeholder="Passphrase for this archive" autocomplete="off" spellcheck="false">
+          <button class="btn" id="eyeU" type="button">Show</button>
+        </div>
+      </div>
+    </div>
+    <button class="go" id="runU" disabled>Open archive</button>
+    <div class="prog" id="progU"><div class="track"><div class="fill" id="fillU"></div></div><div class="plabel" id="plabelU">Working</div></div>
+    <div class="msg" id="msgU"></div>
+    <div class="step hide" id="entriesWrap" style="margin-top:14px">
+      <div class="step-h"><span class="num">3</span><h2>Contents</h2><button class="btn" id="saveAll" style="margin-left:auto">Save all</button></div>
+      <div class="step-b"><ul class="files" id="entries"></ul></div>
+    </div>
+  </section>
+
+  <div class="note" style="margin-top:26px">
+    <h3>Which apps open an AES-256 zip</h3>
+    <p>AES zip encryption is a WinZip extension, not part of the original zip spec. Most archivers handle it; the unzippers built into Windows and macOS do not, and give a vague error rather than asking for the password.</p>
+    <div class="apps">
+      <span>7-Zip</span><span>WinRAR</span><span>Keka</span><span>The Unarchiver</span>
+      <span>PeaZip</span><span>ZArchiver &middot; Android</span><span>iZip &middot; iOS</span>
+      <span>p7zip &middot; CLI</span><span class="no">Windows Explorer</span><span class="no">macOS Archive Utility</span>
+    </div>
+    <p style="margin-top:10px">To decrypt from a terminal: <code>7z x strongbox.zip</code>. This page's Unlock tab opens them too.</p>
+  </div>
+
+  <footer>
+    Everything runs in your browser &mdash; files are read with the File API, zipped and encrypted in memory, and handed back as a download. There is no server and no upload, so hosting this page publicly exposes nothing but the page itself. Lose the passphrase and the archive is unrecoverable; there is no reset.
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.7.57/dist/zip.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var $=function(s){return document.querySelector(s)};
+  if(!window.zip){document.getElementById("msgL").textContent="Could not load the zip library. Check your connection and reload.";document.getElementById("msgL").className="msg on";return}
+  zip.configure({useWebWorkers:location.protocol!=="file:"});
+
+  var WORDS=("amber anchor apple arbor arrow aspen atlas aura basil beacon beak bench birch bison blade bloom blue bolt brass bridge brook brush cabin cable cactus canvas canyon cedar chalk charm chase cider cinder clay cliff cloud clover coal cobalt comet copper coral cove crane crate creek crest crisp crow crown cube curve cypress dawn delta denim dew diamond dock dove draft drift dune dusk eagle east ebb echo elder ember emu ether fable falcon fern fiber field finch flame flax fleet flint flock flume forge fox frost gable garnet gate gecko ginger glade glass globe gold grain granite grape grove gust harbor hawk hazel heath hedge helm hill hollow honey hook hush ice indigo inlet iris iron ivory jade jasper jet jolt junco juniper kayak kelp kernel kite knoll lagoon lance lantern lark laurel ledge lemon lentil levee lilac linen lion loam lodge loom lotus lumen lupine lynx mango maple marble marsh meadow mesa mica mint mirror mist moss moth mulberry myrtle nectar needle nest nimbus north oak oasis ocean olive onyx opal orbit orchid osprey otter oxide pacer palm pampas papyrus pearl pebble pepper pewter pigeon pine pivot plane plum pollen pond poplar prairie prism pulse quail quartz quiver radish raft rapid raven reed reef relay ridge rill river robin rope rosin rudder rune rust saffron sage sail salt sand sapphire scout sedge shale shell shore sierra silk silver sketch slate sleet slope smoke snow sorrel spark spine spire spruce stag steel stem stone stork storm stream sumac summit sunset surf swallow swan sycamore talon tamarind teal thistle thorn thrush tide timber tin topaz torch trail trout tulip tundra turret umber valley vane vault velvet verbena vine violet vista walnut warbler water wave wheat willow wind wren yarrow yew zephyr zinc").split(" ");
+
+  function fmt(n){
+    if(!n)return "0 B";
+    var u=["B","KB","MB","GB","TB"],i=Math.floor(Math.log(n)/Math.log(1024));
+    i=Math.min(i,u.length-1);
+    var v=n/Math.pow(1024,i);
+    return (i===0||v>=100?Math.round(v):v.toFixed(1))+" "+u[i];
+  }
+  function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+  function save(blob,name){
+    var a=document.createElement("a"),u=URL.createObjectURL(blob);
+    a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(u)},20000);
+  }
+  function wire(zone,input){
+    zone.addEventListener("click",function(){input.click()});
+    zone.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();input.click()}});
+    ["dragenter","dragover"].forEach(function(t){zone.addEventListener(t,function(e){e.preventDefault();zone.classList.add("hot")})});
+    ["dragleave","drop"].forEach(function(t){zone.addEventListener(t,function(e){e.preventDefault();zone.classList.remove("hot")})});
+  }
+  function flash(el,text){el.textContent=text;el.className=text?"msg on":"msg"}
+
+  /* ---------- mode ---------- */
+  var mL=$("#mLock"),mU=$("#mUnlock");
+  mL.addEventListener("click",function(){setMode(true)});
+  mU.addEventListener("click",function(){setMode(false)});
+  function setMode(lock){
+    mL.setAttribute("aria-selected",lock?"true":"false");
+    mU.setAttribute("aria-selected",lock?"false":"true");
+    $("#paneLock").classList.toggle("hide",!lock);
+    $("#paneUnlock").classList.toggle("hide",lock);
+  }
+
+  /* ---------- lock: files ---------- */
+  var files=[],listL=$("#listL"),tally=$("#tally");
+  wire($("#dropL"),$("#pickL"));
+  $("#dropL").addEventListener("drop",function(e){add(e.dataTransfer.files)});
+  $("#pickL").addEventListener("change",function(e){add(e.target.files);e.target.value=""});
+
+  function add(fl){
+    for(var i=0;i<fl.length;i++){
+      var f=fl[i],dup=false;
+      for(var j=0;j<files.length;j++){if(files[j].name===f.name&&files[j].size===f.size){dup=true;break}}
+      if(!dup)files.push(f);
+    }
+    renderFiles();
+  }
+  function renderFiles(){
+    listL.innerHTML="";
+    var total=0;
+    files.forEach(function(f,i){
+      total+=f.size;
+      var li=document.createElement("li");
+      li.innerHTML='<span class="nm">'+esc(f.name)+'</span><span class="sz">'+fmt(f.size)+'</span>';
+      var b=document.createElement("button");
+      b.className="x";b.type="button";b.innerHTML="&times;";
+      b.setAttribute("aria-label","Remove "+f.name);
+      b.addEventListener("click",function(){files.splice(i,1);renderFiles()});
+      li.appendChild(b);listL.appendChild(li);
+    });
+    tally.textContent=files.length?files.length+(files.length>1?" files":" file")+" · "+fmt(total):"nothing selected";
+    if(files.length===1){
+      var base=files[0].name.replace(/\.[^.]+$/,"");
+      $("#outName").value=(base||"strongbox")+".zip";
+    }
+    sync();
+  }
+
+  /* ---------- lock: passphrase ---------- */
+  var pwL=$("#pwL"),bars=$("#bars").children,verdict=$("#verdict"),bitsEl=$("#bits"),genNote=$("#genNote");
+  function entropy(pw){
+    if(!pw)return 0;
+    var pool=0;
+    if(/[a-z]/.test(pw))pool+=26;
+    if(/[A-Z]/.test(pw))pool+=26;
+    if(/[0-9]/.test(pw))pool+=10;
+    if(/[^a-zA-Z0-9]/.test(pw))pool+=33;
+    return Math.round(pw.length*(Math.log(pool||2)/Math.LN2));
+  }
+  var TIERS=[[0,"Too short","var(--crit)"],[40,"Weak","var(--crit)"],[60,"Fair","var(--warn)"],[80,"Good","var(--good)"],[110,"Strong","var(--good)"]];
+  function meter(forcedBits,label){
+    var pw=pwL.value,b=forcedBits||entropy(pw),t=0;
+    for(var i=0;i<TIERS.length;i++)if(b>=TIERS[i][0])t=i;
+    if(!pw){verdict.textContent="Waiting for a passphrase";bitsEl.textContent="0 bits";
+      for(var k=0;k<5;k++)bars[k].className="";
+      $("#bars").parentNode.style.removeProperty("--lvl");return}
+    for(var k2=0;k2<5;k2++)bars[k2].className=k2<=t?"on":"";
+    $("#bars").parentNode.style.setProperty("--lvl",TIERS[t][2]);
+    verdict.innerHTML="<b>"+TIERS[t][1]+"</b>"+(label?" · "+label:"");
+    bitsEl.textContent="~"+b+" bits";
+  }
+  pwL.addEventListener("input",function(){genNote.textContent="";meter();sync()});
+  $("#eyeL").addEventListener("click",function(){
+    var s=pwL.type==="password";pwL.type=s?"text":"password";this.textContent=s?"Hide":"Show";
+  });
+  function rand(n,max){
+    var a=new Uint32Array(n);crypto.getRandomValues(a);
+    var o=[],lim=Math.floor(4294967296/max)*max;
+    for(var i=0;i<n;i++){var v=a[i];while(v>=lim){var t=new Uint32Array(1);crypto.getRandomValues(t);v=t[0]}o.push(v%max)}
+    return o;
+  }
+  $("#genWords").addEventListener("click",function(){
+    var n=7,idx=rand(n,WORDS.length),w=idx.map(function(i){return WORDS[i]});
+    pwL.value=w.join("-");pwL.type="text";$("#eyeL").textContent="Hide";
+    var b=Math.round(n*(Math.log(WORDS.length)/Math.LN2));
+    genNote.textContent=n+" words × "+WORDS.length+"-word list";
+    meter(b,"generated · typable");sync();
+  });
+  $("#genKey").addEventListener("click",function(){
+    var pool="abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*-_=+";
+    var n=24,idx=rand(n,pool.length),s="";
+    for(var i=0;i<n;i++)s+=pool.charAt(idx[i]);
+    pwL.value=s;pwL.type="text";$("#eyeL").textContent="Hide";
+    genNote.textContent=n+" chars × "+pool.length+"-char pool";
+    meter(Math.round(n*(Math.log(pool.length)/Math.LN2)),"generated · paste it somewhere safe");sync();
+  });
+
+  /* ---------- spec rail ---------- */
+  function cipher(){return document.querySelector('input[name=cipher]:checked').value}
+  var SPECS={
+    aes:[["Cipher","AES-256-CTR"],["Key derivation","PBKDF2-HMAC-SHA1"],["Iterations","1,000"],["Salt","16 bytes"],["Integrity","HMAC-SHA1, 10 bytes"],["Spec","WinZip AE-2"]],
+    zipcrypto:[["Cipher","ZipCrypto (PKZIP)"],["Key derivation","none — CRC seeded"],["Key size","96 bits"],["Salt","none"],["Integrity","1-byte check"],["Spec","PKWARE 2.0"]]
+  };
+  function renderSpec(){
+    var rows=SPECS[cipher()],h="";
+    rows.forEach(function(r){h+="<div><dt>"+r[0]+"</dt><dd>"+r[1]+"</dd></div>"});
+    $("#specRail").innerHTML=h;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=cipher]'),function(r){
+    r.addEventListener("change",renderSpec);
+  });
+
+  /* ---------- lock: run ---------- */
+  var runL=$("#runL"),progL=$("#progL"),fillL=$("#fillL"),plabelL=$("#plabelL"),outL=$("#outL");
+  function sync(){runL.disabled=!(files.length&&pwL.value)}
+  var lastBlob=null,lastName="";
+
+  runL.addEventListener("click",async function(){
+    flash($("#msgL"),"");outL.className="out";
+    runL.disabled=true;progL.className="prog on";fillL.style.width="0%";
+    var total=files.length?files.reduce(function(s,f){return s+f.size},0):0;
+    var opts=cipher()==="aes"?{password:pwL.value,encryptionStrength:3}
+                             :{password:pwL.value,zipCrypto:true};
+    opts.level=parseInt($("#lvl").value,10);
+    var writer=new zip.ZipWriter(new zip.BlobWriter("application/zip"),opts);
+    try{
+      var done=0;
+      for(var i=0;i<files.length;i++){
+        var f=files[i];
+        plabelL.textContent="Encrypting "+f.name+"  ("+(i+1)+" of "+files.length+")";
+        await writer.add(f.name,new zip.BlobReader(f),{onprogress:function(cur){
+          if(total)fillL.style.width=Math.min(99,((done+cur)/total)*100).toFixed(1)+"%";
+          return undefined;
+        }});
+        done+=f.size;
+      }
+      var blob=await writer.close();
+      fillL.style.width="100%";plabelL.textContent="Done";
+      lastBlob=blob;lastName=($("#outName").value||"strongbox.zip").replace(/[\/\\]/g,"_");
+      if(!/\.zip$/i.test(lastName))lastName+=".zip";
+      var pct=total?Math.round((1-blob.size/total)*100):0;
+      $("#outInfo").innerHTML=esc(lastName)+" &middot; "+fmt(blob.size)+
+        " &middot; "+(cipher()==="aes"?"AES-256":"ZipCrypto")+
+        (pct>0?" &middot; "+pct+"% smaller than "+fmt(total):"");
+      outL.className="out on";
+      save(blob,lastName);
+    }catch(err){
+      try{await writer.close()}catch(e){}
+      flash($("#msgL"),"Encryption failed: "+(err&&err.message?err.message:String(err))+". Try Store only, or fewer files at once.");
+      progL.className="prog";
+    }
+    runL.disabled=false;
+  });
+  $("#saveL").addEventListener("click",function(){if(lastBlob)save(lastBlob,lastName)});
+
+  /* ---------- unlock ---------- */
+  var uFile=null,pwU=$("#pwU"),runU=$("#runU");
+  wire($("#dropU"),$("#pickU"));
+  $("#dropU").addEventListener("drop",function(e){if(e.dataTransfer.files[0])setU(e.dataTransfer.files[0])});
+  $("#pickU").addEventListener("change",function(e){if(e.target.files[0])setU(e.target.files[0]);e.target.value=""});
+  pwU.addEventListener("input",syncU);
+  $("#eyeU").addEventListener("click",function(){
+    var s=pwU.type==="password";pwU.type=s?"text":"password";this.textContent=s?"Hide":"Show";
+  });
+  function setU(f){
+    uFile=f;
+    $("#listU").innerHTML='<li><span class="nm">'+esc(f.name)+'</span><span class="sz">'+fmt(f.size)+'</span></li>';
+    $("#uTally").textContent=fmt(f.size);
+    $("#entriesWrap").className="step hide";flash($("#msgU"),"");syncU();
+  }
+  function syncU(){runU.disabled=!(uFile&&pwU.value)}
+
+  var entries=[],reader=null;
+  runU.addEventListener("click",async function(){
+    flash($("#msgU"),"");runU.disabled=true;
+    $("#progU").className="prog on";$("#fillU").style.width="30%";$("#plabelU").textContent="Reading archive";
+    try{
+      if(reader){try{await reader.close()}catch(e){}}
+      reader=new zip.ZipReader(new zip.BlobReader(uFile),{password:pwU.value});
+      entries=(await reader.getEntries()).filter(function(e){return !e.directory});
+      $("#fillU").style.width="100%";$("#plabelU").textContent=entries.length+" entries";
+      if(!entries.length){flash($("#msgU"),"This archive has no files in it.");}
+      var ul=$("#entries");ul.innerHTML="";
+      entries.forEach(function(en,i){
+        var li=document.createElement("li");
+        li.innerHTML='<span class="nm">'+esc(en.filename)+'</span><span class="sz">'+fmt(en.uncompressedSize)+'</span>';
+        var b=document.createElement("button");
+        b.className="btn";b.type="button";b.textContent="Save";
+        b.addEventListener("click",function(){extract(en,b)});
+        li.appendChild(b);ul.appendChild(li);
+      });
+      $("#entriesWrap").className=entries.length?"step":"step hide";
+    }catch(err){
+      flash($("#msgU"),"Could not read it: "+(err&&err.message?err.message:String(err))+". Is it a zip file?");
+      $("#progU").className="prog";
+    }
+    runU.disabled=false;
+  });
+  async function extract(en,btn){
+    var old=btn.textContent;btn.textContent="…";btn.disabled=true;
+    try{
+      var blob=await en.getData(new zip.BlobWriter());
+      save(blob,en.filename.split("/").pop()||"file");
+      btn.textContent="Saved";
+      setTimeout(function(){btn.textContent=old;btn.disabled=false},1600);
+    }catch(err){
+      var m=String(err&&err.message||err);
+      flash($("#msgU"),/password|Password|ERR_INVALID/.test(m)?"Wrong passphrase for this archive.":"Extraction failed: "+m);
+      btn.textContent=old;btn.disabled=false;
+    }
+  }
+  $("#saveAll").addEventListener("click",async function(){
+    this.disabled=true;var old=this.textContent;this.textContent="Saving…";
+    for(var i=0;i<entries.length;i++){
+      try{ save(await entries[i].getData(new zip.BlobWriter()),entries[i].filename.split("/").pop()||("file"+i));
+           await new Promise(function(r){setTimeout(r,320)});
+      }catch(err){
+        var m=String(err&&err.message||err);
+        flash($("#msgU"),/password|Password|ERR_INVALID/.test(m)?"Wrong passphrase for this archive.":"Stopped at "+entries[i].filename+": "+m);
+        break;
+      }
+    }
+    this.textContent=old;this.disabled=false;
+  });
+
+  renderSpec();meter();
+})();
+</script>
+</body>
+</html>
